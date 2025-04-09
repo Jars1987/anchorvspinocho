@@ -118,8 +118,7 @@ fn test_withdraw() {
         state_bump,
     };
 
-    let data = unsafe { to_bytes(&vault_state) };
-
+    let data = to_bytes(&vault_state);
     let mut state_data = vec![0u8; VaultState::LEN];
     state_data.copy_from_slice(&data);
     state_account.data = state_data;

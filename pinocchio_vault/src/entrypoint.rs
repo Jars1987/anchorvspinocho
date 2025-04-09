@@ -1,7 +1,7 @@
 #![allow(unexpected_cfgs)]
 use crate::instruction::{self, MyProgramInstrution};
 use pinocchio::{
-    account_info::AccountInfo, no_allocator, nostd_panic_handler, program_entrypoint,
+    account_info::AccountInfo, default_panic_handler, no_allocator, program_entrypoint,
     program_error::ProgramError, pubkey::Pubkey, ProgramResult,
 };
 use pinocchio_log::log;
@@ -10,9 +10,7 @@ use pinocchio_log::log;
 program_entrypoint!(process_instruction);
 //Do not allocate memory.
 no_allocator!();
-// Use the no_std panic handler.
-#[cfg(target_os = "solana")]
-nostd_panic_handler!();
+default_panic_handler!();
 
 #[inline(always)]
 fn process_instruction(
