@@ -9,7 +9,7 @@ extern crate alloc;
 use alloc::vec;
 
 use solana_pinocchio_starter::instruction::DepositIxData;
-use solana_pinocchio_starter::state::{to_bytes, DataLen};
+use solana_pinocchio_starter::state::{to_bytes, DataLen, VaultState};
 use solana_pinocchio_starter::ID;
 
 pub const PROGRAM: Pubkey = Pubkey::new_from_array(ID);
@@ -31,24 +31,34 @@ fn test_deposit() {
     let (system_program, system_account) = program::keyed_account_for_system_program();
 
     // Create the PDA
-    let (vault_pda, bump) = Pubkey::find_program_address(
+    let (vault_pda, vault_bump) = Pubkey::find_program_address(
         &["pinocchio_vault_pda".as_bytes(), &PAYER.to_bytes()],
         &PROGRAM,
     );
+    let (state_pda, state_bump) =
+        Pubkey::find_program_address(&["state".as_bytes(), &PAYER.to_bytes()], &PROGRAM);
 
     //Initialize the accounts
     let payer_account = Account::new(10 * LAMPORTS_PER_SOL, 0, &system_program);
     let vault_account = Account::new(0, 0, &system_program);
+    let state_account = Account::new(0, 0, &system_program);
+    let rent_account = Account::new(mollusk.sysvars.rent.minimum_balance(0), 0, &RENT);
 
     //Push the accounts in to the instruction_accounts vec!
     let ix_accounts = vec![
         AccountMeta::new(PAYER, true),
         AccountMeta::new(vault_pda, false),
+        AccountMeta::new(state_pda, false),
+        AccountMeta::new_readonly(RENT, false),
         AccountMeta::new_readonly(system_program, false),
     ];
 
     // Create the instruction data
-    let ix_data = DepositIxData { amount: 1, bump };
+    let ix_data = DepositIxData {
+        amount: 1,
+        vault_bump,
+        state_bump,
+    };
 
     // Ix discriminator = 0
     let mut ser_ix_data = vec![0];
@@ -63,6 +73,8 @@ fn test_deposit() {
     let tx_accounts = &vec![
         (PAYER, payer_account.clone()),
         (vault_pda, vault_account.clone()),
+        (state_pda, state_account.clone()),
+        (RENT, rent_account.clone()),
         (system_program, system_account.clone()),
     ];
 
@@ -80,27 +92,40 @@ fn test_withdraw() {
     let (system_program, system_account) = program::keyed_account_for_system_program();
 
     // Create the PDA
-    let (vault_pda, bump) = Pubkey::find_program_address(
+    let (vault_pda, vault_bump) = Pubkey::find_program_address(
         &["pinocchio_vault_pda".as_bytes(), &PAYER.to_bytes()],
         &PROGRAM,
     );
 
+    let (state_pda, state_bump) =
+        Pubkey::find_program_address(&["state".as_bytes(), &PAYER.to_bytes()], &PROGRAM);
+
     //Initialize the accounts
     let payer_account = Account::new(9 * LAMPORTS_PER_SOL, 0, &system_program);
     let vault_account = Account::new(1 * LAMPORTS_PER_SOL, 0, &system_program);
+    let mut state_account = Account::new(0, 0, &system_program);
 
     //Push the accounts in to the instruction_accounts vec!
     let ix_accounts = vec![
         AccountMeta::new(PAYER, true),
         AccountMeta::new(vault_pda, false),
+        AccountMeta::new(state_pda, false),
         AccountMeta::new_readonly(system_program, false),
     ];
 
-    // Ix discriminator = 1
-    let mut ix_data = vec![1];
+    let vault_state = VaultState {
+        vault_bump,
+        state_bump,
+    };
 
-    // Serialize the instruction data
-    ix_data.push(bump);
+    let data = unsafe { to_bytes(&vault_state) };
+
+    let mut state_data = vec![0u8; VaultState::LEN];
+    state_data.copy_from_slice(&data);
+    state_account.data = state_data;
+
+    // Ix discriminator = 1
+    let ix_data = vec![1];
 
     // Create instruction
     let instruction = Instruction::new_with_bytes(PROGRAM, &ix_data, ix_accounts);
@@ -108,6 +133,7 @@ fn test_withdraw() {
     let tx_accounts = &vec![
         (PAYER, payer_account.clone()),
         (vault_pda, vault_account.clone()),
+        (state_pda, state_account.clone()),
         (system_program, system_account.clone()),
     ];
 

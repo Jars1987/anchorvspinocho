@@ -17,19 +17,12 @@ pinocchio-token = "0.3.0"
 solana-sdk = "2.1.0"
 mollusk-svm = "0.1.4"
 spl-token = "8.0.0"
-mollusk-svm-bencher = "0.1.4"
 
 
 [features]
 no-entrypoint = []
 std = []
 test-default = ["no-entrypoint", "std"]
-bench-default = ["no-entrypoint", "std"]
-
-[[bench]]
-name = "compute_units"
-harness = false
-
 
 [[test]]
 name = "unit_tests"
