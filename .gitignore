@@ -1,0 +1,9 @@
+# Rust build artifacts
+**/target/
+
+# Node.js dependencies
+**/node_modules/
+
+# Optional: OS/system junk
+.DS_Store
+Thumbs.db
