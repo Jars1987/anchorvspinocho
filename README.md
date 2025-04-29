@@ -46,6 +46,7 @@ This project compares two Solana smart contract development frameworks — **Anc
 yarn install
 anchor build
 anchor test
+```
 
 ## 📺 Watch the Comparison
 The entire build and explanation are available on YouTube: 
